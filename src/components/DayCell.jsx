@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 
-const DayCell = ({ dayNumber, isDisabled, date, rate }) => {
+const DayCell = ({ date, rate, available, className }) => {
+  const newDate = new Date(date);
+  const dayNumber = newDate.getDate();
   return (
     <div
+      onClick={() => console.log("test")}
       key={date}
-      className={`day ${isDisabled ? "disabled-day" : ""}`}
-      data-date={date}
+      className={`day${` ${className}`}`}
     >
-      {dayNumber}
-      {rate !== null && <div className="rate">{rate}€</div>}
+      <div className="day-number">{dayNumber}</div>
+      {rate && <div className="rate">{rate}€</div>}
     </div>
   );
 };

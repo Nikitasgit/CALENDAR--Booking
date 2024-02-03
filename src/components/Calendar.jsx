@@ -1,67 +1,140 @@
 import React, { useEffect, useRef, useState } from "react";
-import chevronRight from "../assets/icons/right-chevron.png";
-import chevronLeft from "../assets/icons/left-chevron.png";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import axios from "axios";
 import DayCell from "./DayCell";
+import chevronRight from "../assets/icons/right-chevron.png";
+import chevronLeft from "../assets/icons/left-chevron.png";
+import {
+  findNextMonthDates,
+  findPrevMonthDates,
+  getMissingDates,
+} from "../functions/DisplayMonth";
+
 const Calendar = () => {
   const [dates, setDates] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(null);
   const [currentYear, setCurrentYear] = useState(null);
   const [defaultDate, setDefaultDate] = useState(null);
   const [currentCells, setCurrentCells] = useState([]);
-  const [hoveredDate, setHoveredDate] = useState(null);
-  const [mousePressed, setMousePressed] = useState(false);
-  const [datesHovered, setDatesHovered] = useState();
+  const [highlightedCells, setHighlightedCells] = useState([]);
   const [range, setRange] = useState({});
   const daysWrapper = useRef(null);
+  const [currentMonthDates, setCurrentMonthDates] = useState();
+  const { earliestDate, latestDate } = findMinMaxDates(dates);
+  const [previousAvailability, setPreviousAvailability] = useState(true);
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:3010/api/v1/accommodations")
-      .then((res) => setDates(res.data.accommodations[1].dates));
-  }, []);
+  const checkLatestDate = () => {
+    const currentDate = new Date(currentYear, currentMonth, 1);
+    if (currentDate > latestDate) {
+      return false;
+    }
+    return true;
+  };
+  const checkEarliestDate = () => {
+    const currentDate = new Date(currentYear, currentMonth, 1);
+    if (currentDate < earliestDate) {
+      return false;
+    }
+    return true;
+  };
+  function findMinMaxDates(dateArray) {
+    if (!dateArray || dateArray.length === 0) {
+      return { earliestDate: null, latestDate: null };
+    }
 
-  useEffect(() => {
-    if (dates.length > 0) {
-      setDefaultDate(new Date(dates[0].date));
+    let earliestDate = new Date(dateArray[0].date);
+    let latestDate = new Date(dateArray[0].date);
+
+    for (let i = 1; i < dateArray.length; i++) {
+      const currentDate = new Date(dateArray[i].date);
+
+      if (currentDate < earliestDate) {
+        earliestDate = currentDate;
+      }
+
+      if (currentDate > latestDate) {
+        latestDate = currentDate;
+      }
     }
-  }, [dates]);
+
+    return { earliestDate, latestDate };
+  }
   useEffect(() => {
-    defaultDate && setCurrentMonth(defaultDate.getMonth());
-    defaultDate && setCurrentYear(defaultDate.getFullYear());
-  }, [defaultDate]);
-  useEffect(() => {
-    if (currentMonth != null) {
-      findMonthToDisplay();
-      currentMonth;
-    }
+    const currentMonthDates = dates.filter((dateObj) => {
+      const date = new Date(dateObj.date);
+      return (
+        date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      );
+    });
+    const prevMonthDates = findPrevMonthDates(currentYear, currentMonth);
+    const missingDates = getMissingDates(
+      currentMonthDates,
+      currentYear,
+      currentMonth
+    );
+    const monthDatesExisting = addClassesToDates(currentMonthDates);
+    const nextMonthDates = findNextMonthDates(
+      prevMonthDates.length,
+      missingDates.length,
+      monthDatesExisting.length,
+      currentYear,
+      currentMonth
+    );
+
+    setCurrentMonthDates([
+      ...prevMonthDates,
+      ...missingDates,
+      ...monthDatesExisting,
+      ...nextMonthDates,
+    ]);
   }, [currentMonth]);
 
   useEffect(() => {
+    axios.get("http://localhost:3010/api/v1/accommodations").then((res) => {
+      setDefaultDate(new Date(res.data.accommodations[1].dates[0].date));
+      setDates(res.data.accommodations[1].dates);
+      setCurrentMonth(
+        new Date(res.data.accommodations[1].dates[0].date).getMonth()
+      );
+      setCurrentYear(
+        new Date(res.data.accommodations[1].dates[0].date).getFullYear()
+      );
+    });
+  }, []);
+
+  /* useEffect(() => {
     const handleDateClick = (event) => {
-      const clickedDate = event.target.getAttribute("data-date");
-      if (clickedDate) {
+      const clickedDateElement = event.target.closest(".day");
+      if (clickedDateElement) {
+        const clickedDate = clickedDateElement.getAttribute("data-date");
         const clickedDateObject = new Date(clickedDate);
+
         if (!range.startDate && !range.endDate) {
           setRange({ startDate: clickedDateObject, endDate: null });
-          event.target.classList.add("range-selected");
         } else if (range.startDate && !range.endDate) {
           if (clickedDateObject > range.startDate) {
             setRange({
               startDate: range.startDate,
               endDate: clickedDateObject,
             });
-            event.target.classList.add("range-selected");
+            setHighlightedCells(
+              getDatesBetween(range.startDate, clickedDateObject)
+            );
           } else {
-            setRange({ startDate: clickedDateObject, endDate: null });
+            setHighlightedCells([]);
+            setRange({
+              startDate: clickedDateObject,
+              endDate: null,
+            });
           }
         } else {
           setRange({ startDate: clickedDateObject, endDate: null });
+          setHighlightedCells([]);
         }
       }
     };
+
     if (daysWrapper.current) {
       daysWrapper.current.addEventListener("click", handleDateClick);
     }
@@ -70,125 +143,114 @@ const Calendar = () => {
         daysWrapper.current.removeEventListener("click", handleDateClick);
       }
     };
-  }, [range.startDate, range.endDate]);
-  /*  useEffect(() => {
-    const handleMouseHover = (event) => {
-      //if startDate exists and mouse hover dates having date later than startDate add class "mouseHoverDate"
-    };
-    if (daysWrapper.current) {
-      daysWrapper.current.addEventListener("mouseover", handleMouseHover);
-    }
-    return () => {
-      if (daysWrapper.current) {
-        daysWrapper.current.removeEventListener("click", handleDateClick);
+  }, [range.startDate, range.endDate]); */
+
+  useEffect(() => {
+    const cellsArray = Array.from(daysWrapper.current.childNodes);
+    cellsArray.forEach((dateCell) => {
+      dateCell.classList.remove("highlighted", "first-date", "last-date");
+    });
+
+    highlightedCells.forEach((date, index) => {
+      const dateCell = cellsArray.find(
+        (cell) => cell.getAttribute("data-date") == date
+      );
+
+      if (dateCell) {
+        dateCell.classList.add("highlighted");
+
+        if (index === 0) {
+          dateCell.classList.add("first-date");
+        }
+
+        if (index === highlightedCells.length - 1) {
+          dateCell.classList.add("last-date");
+        }
       }
-    };
-  }, []); */
-  const handleMouseOver = (event) => {
-    const targetDate = event.target.getAttribute("data-date");
-    if (targetDate) {
-      const cellIndex = Array.from(daysWrapper.current.childNodes).indexOf(
-        event.target
-      );
-      setHoveredDate(new Date(targetDate));
+    });
+  }, [highlightedCells, currentCells]);
 
-      // Remove "highlighted" class from all date cells
-      Array.from(daysWrapper.current.childNodes).forEach((dateCell) => {
-        dateCell.classList.remove("highlighted");
+  /*   useEffect(() => {
+    const unavailableDates = currentCells.filter(
+      (cell) => !cell.props.available
+    );
+    const groupedUnavailableDates = groupUnavailableDates(unavailableDates);
+
+    groupedUnavailableDates.forEach((group) => {
+      group.forEach((cell, index) => {
+        const cellElement = cell.ref.current; // Access the underlying DOM element
+        const position = determinePosition(index, group.length);
+
+        if (position === "first") {
+          cellElement.classList.add("first-date");
+        } else if (position === "last") {
+          cellElement.classList.add("last-date");
+        } else {
+          cellElement.classList.add("day-blocked");
+        }
       });
+    });
+  }, [currentCells]); */
 
-      // Add a class to dates between startDate and hovered date
-      const startDateIndex = Array.from(
-        daysWrapper.current.childNodes
-      ).findIndex(
-        (node) =>
-          node.getAttribute("data-date") === range.startDate.toISOString()
-      );
+  const addClassesToDates = (datesArray) => {
+    const lastDayPrevMonth = new Date(currentYear, currentMonth, 1);
+    const dateToUTCTime = lastDayPrevMonth.setUTCHours(0, 0, 0, 0);
+    const dateToISO = new Date(dateToUTCTime).toISOString();
 
-      if (startDateIndex !== -1) {
-        for (let i = 0; i < daysWrapper.current.childNodes.length; i++) {
-          const dateCell = daysWrapper.current.childNodes[i];
-          if (
-            i >= Math.min(startDateIndex, cellIndex) &&
-            i <= Math.max(startDateIndex, cellIndex)
-          ) {
-            dateCell.classList.add("highlighted");
+    let foundDate;
+    for (const dateObj of dates) {
+      if (dateObj.date === dateToISO) {
+        foundDate = dateObj.available;
+        break;
+      }
+    }
+
+    return datesArray.map((date, index, array) => {
+      if (!foundDate && datesArray[0].available) {
+        datesArray[0].className = "morning-blocked";
+      }
+      if (!foundDate && !datesArray[0].available) {
+        datesArray[0].className = "day-blocked";
+      }
+      if (!date.available) {
+        if (date.className !== "day-blocked") {
+          date.className = "evening-blocked";
+        }
+        if (index < array.length - 1) {
+          const nextDate = array[index + 1];
+          if (!nextDate.available) {
+            nextDate.className = "day-blocked";
+          } else {
+            nextDate.className = "morning-blocked";
           }
         }
       }
-    }
-  };
 
-  const handleMouseOut = () => {
-    setHoveredDate(null);
-  };
-  const findMonthToDisplay = () => {
-    const fullMonth = [];
-    const monthFirstDay = new Date(currentYear, currentMonth, 1);
-
-    const monthFirstDayCopy = new Date(monthFirstDay);
-
-    // Generate the full month
-    while (monthFirstDayCopy.getMonth() === currentMonth) {
-      fullMonth.push(new Date(monthFirstDayCopy));
-      monthFirstDayCopy.setDate(monthFirstDayCopy.getDate() + 1);
-    }
-
-    // Create an array with dates containing ones from the `dates` array
-    const datesArray = fullMonth.map((date) => {
-      const foundDate = dates.find((selectedDate) => {
-        const selectedDateObject = new Date(selectedDate.date);
-
-        return (
-          date.getMonth() === selectedDateObject.getMonth() &&
-          date.getFullYear() === selectedDateObject.getFullYear() &&
-          date.getDate() === selectedDateObject.getDate()
-        );
-      });
-      return foundDate ? foundDate : { date: date, rate: null }; // Add a default rate if not found
+      return date;
     });
-    const firstDayCell =
-      new Date(datesArray[0].date).getDay() !== 0
-        ? new Date(datesArray[0].date).getDay()
-        : 7;
+  };
 
-    const lastDatePrevMonth = new Date(monthFirstDay.setDate(0));
-    const daysPrevMonth = lastDatePrevMonth.getDate();
-    let countPrevMonthStart = daysPrevMonth - firstDayCell + 2;
-    console.log(firstDayCell);
-    const dayCells = [];
-    for (let i = 1; i < firstDayCell; i++) {
-      dayCells.push(
-        <DayCell
-          rate={null}
-          dayNumber={countPrevMonthStart}
-          isDisabled={true}
-          date={null}
-        />
-      );
-      countPrevMonthStart += 1;
+  const handleMouseOver = (e) => {
+    if (range.startDate) {
+      const targetDateElement = e.target.closest(".day");
+      if (targetDateElement) {
+        const dateHovered = new Date(
+          targetDateElement.getAttribute("data-date")
+        );
+        const cellsArray = Array.from(daysWrapper.current.childNodes);
+        const filteredCells = cellsArray.filter((cell) => {
+          const cellDateStr = cell.getAttribute("data-date");
+          if (cellDateStr) {
+            const cellDate = new Date(cellDateStr);
+            return cellDate >= range.startDate && cellDate <= dateHovered;
+          }
+        });
+        const highlightedDates = filteredCells.map((dateCell) =>
+          dateCell.getAttribute("data-date")
+        );
+        setHighlightedCells(highlightedDates);
+      }
     }
-
-    for (let i = 1; i < datesArray.length + 1; i++) {
-      dayCells.push(
-        <DayCell
-          rate={datesArray[i - 1].rate}
-          dayNumber={new Date(datesArray[i - 1].date).getDate()}
-          isDisabled={false}
-          date={datesArray[i - 1].date}
-        />
-      );
-    }
-    const cellsMissing = 42 - datesArray.length - (firstDayCell - 1);
-
-    let count = 0;
-    for (let i = 0; i < cellsMissing; i++) {
-      count += 1;
-      dayCells.push(
-        <DayCell rate={null} dayNumber={count} isDisabled={true} date={null} />
-      );
-    }
-    setCurrentCells(dayCells);
   };
 
   return (
@@ -208,8 +270,12 @@ const Calendar = () => {
             alt=""
             className="left-arrow"
             onClick={() => {
-              setCurrentMonth(currentMonth == 0 ? 11 : currentMonth - 1);
-              currentMonth == 0 && setCurrentYear(currentYear - 1);
+              const canNavigate = checkEarliestDate();
+              canNavigate &&
+                setCurrentMonth(currentMonth === 0 ? 11 : currentMonth - 1);
+              canNavigate &&
+                currentMonth === 0 &&
+                setCurrentYear(currentYear - 1);
             }}
           />
 
@@ -226,8 +292,9 @@ const Calendar = () => {
             alt=""
             className="right-arrow"
             onClick={() => {
-              setCurrentMonth(currentMonth == 11 ? 0 : currentMonth + 1),
-                currentMonth == 11 && setCurrentYear(currentYear + 1);
+              checkLatestDate() &&
+                setCurrentMonth(currentMonth === 11 ? 0 : currentMonth + 1),
+                currentMonth === 11 && setCurrentYear(currentYear + 1);
             }}
           />
         </div>
@@ -246,7 +313,16 @@ const Calendar = () => {
             onMouseOver={(e) => range.endDate == null && handleMouseOver(e)}
             ref={daysWrapper}
           >
-            {currentCells}
+            {currentMonthDates &&
+              currentMonthDates.map((dateObj) => (
+                <DayCell
+                  key={dateObj.date}
+                  rate={dateObj.rate}
+                  available={dateObj.available}
+                  date={dateObj.date}
+                  className={dateObj.className}
+                />
+              ))}
           </div>
         </div>
       </div>
