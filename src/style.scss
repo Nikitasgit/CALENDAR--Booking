@@ -76,9 +76,27 @@ body {
       text-align: center;
       background: #a0c2a5;
       font-size: 0.9rem;
-      gap: 5px;
+
       .highlighted {
-        background: #b37676 !important;
+        background: #7db376;
+      }
+      .startDate {
+        background: linear-gradient(
+          135deg,
+          #ffffff00 0%,
+          #ffffff00 50%,
+          #7db376 50%,
+          #7db376 100%
+        ) !important;
+      }
+      .endDate {
+        background: linear-gradient(
+          135deg,
+          #7db376 0%,
+          #7db376 50%,
+          #ffffff00 50%,
+          #ffffff00 100%
+        ) !important;
       }
       .evening-blocked {
         background: linear-gradient(
@@ -87,17 +105,18 @@ body {
           rgba(255, 255, 255, 0) 50%,
           #b37676 50%,
           #b37676 100%
-        ) !important;
-        &:hover {
-          background: linear-gradient(
-            135deg,
-            #7db376 0%,
-            #7db376 50%,
-            #b37676 50%,
-            #b37676 100%
-          ) !important;
-        }
+        );
       }
+      .evening-blocked-selected {
+        background: linear-gradient(
+          135deg,
+          #7db376 0%,
+          #7db376 50%,
+          #b37676 50%,
+          #b37676 100%
+        ) !important;
+      }
+
       .morning-blocked {
         background: linear-gradient(
           135deg,
@@ -106,22 +125,27 @@ body {
           rgba(255, 255, 255, 0) 50%,
           rgba(255, 255, 255, 0) 100%
         ) !important;
-        &:hover {
-          background: linear-gradient(
-            135deg,
-            #b37676 0%,
-            #b37676 50%,
-            #7db376 50%,
-            #7db376 100%
-          ) !important;
-        }
+      }
+      .morning-blocked-selected {
+        background: linear-gradient(
+          135deg,
+          #b37676 0%,
+          #b37676 50%,
+          #7db376 50%,
+          #7db376 100%
+        ) !important;
+      }
+      .stop {
+        user-select: none;
+        pointer-events: none;
       }
       .day-blocked {
         pointer-events: none;
         background: #b37676;
       }
       .day {
-        border: 1px solid rgb(40, 40, 40);
+        position: relative;
+        border: 0.01rem solid rgb(229, 229, 229);
         aspect-ratio: 1/1;
         display: flex;
         flex-direction: column;
@@ -129,10 +153,8 @@ body {
         justify-content: center;
         cursor: pointer;
         font-size: 0.8;
-        &:hover {
-          background: #7db376;
-        }
       }
+
       .disabled-day {
         pointer-events: none;
         background: #a0a0a0;

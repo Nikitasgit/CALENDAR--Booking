@@ -64,11 +64,11 @@ export const findNextMonthDates = (
   }
   return nextMonthDates;
 };
-const getDatesBetween = (startDate, endDate) => {
+export const getDatesBetween = (startDate, endDate) => {
   let dates = [];
   const currentDate = new Date(startDate);
 
-  while (currentDate <= endDate) {
+  while (currentDate <= new Date(endDate)) {
     const dateWithZeroTime = new Date(currentDate);
     dateWithZeroTime.setUTCHours(0, 0, 0, 0);
     dates.push(dateWithZeroTime.toISOString());
@@ -76,4 +76,41 @@ const getDatesBetween = (startDate, endDate) => {
   }
 
   return dates;
+};
+
+export const addClassesToDates = (datesArray, dates, lastDayPrevMonth) => {
+  const dateToUTCTime = lastDayPrevMonth.setUTCHours(0, 0, 0, 0);
+  const dateToISO = new Date(dateToUTCTime).toISOString();
+
+  let foundDate;
+  for (const dateObj of dates) {
+    if (dateObj.date === dateToISO) {
+      foundDate = dateObj.available;
+      break;
+    }
+  }
+
+  return datesArray.map((date, index, array) => {
+    if (!foundDate && datesArray[0].available) {
+      datesArray[0].className = "morning-blocked";
+    }
+    if (!foundDate && !datesArray[0].available) {
+      datesArray[0].className = "day-blocked";
+    }
+    if (!date.available) {
+      if (date.className !== "day-blocked") {
+        date.className = "evening-blocked";
+      }
+      if (index < array.length - 1) {
+        const nextDate = array[index + 1];
+        if (!nextDate.available) {
+          nextDate.className = "day-blocked";
+        } else {
+          nextDate.className = "morning-blocked";
+        }
+      }
+    }
+
+    return date;
+  });
 };
