@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 const DayCell = ({ date, rate, available, className }) => {
   const newDate = new Date(date);

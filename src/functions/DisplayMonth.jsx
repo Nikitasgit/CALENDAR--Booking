@@ -66,13 +66,17 @@ export const findNextMonthDates = (
 };
 export const getDatesBetween = (startDate, endDate) => {
   let dates = [];
-  const currentDate = new Date(startDate);
+  const currentStartDate = new Date(startDate);
+  const currentEndDate = new Date(endDate);
 
-  while (currentDate <= new Date(endDate)) {
-    const dateWithZeroTime = new Date(currentDate);
-    dateWithZeroTime.setUTCHours(0, 0, 0, 0);
-    dates.push(dateWithZeroTime.toISOString());
-    currentDate.setDate(currentDate.getDate() + 1);
+  currentStartDate.setUTCHours(0, 0, 0, 0);
+  currentEndDate.setUTCHours(0, 0, 0, 0);
+
+  let currentDate = new Date(currentStartDate);
+
+  while (currentDate <= currentEndDate) {
+    dates.push(currentDate.toISOString());
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
   }
 
   return dates;

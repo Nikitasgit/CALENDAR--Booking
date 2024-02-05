@@ -89,6 +89,15 @@ body {
           #7db376 100%
         ) !important;
       }
+      .startDate-hover {
+        background: linear-gradient(
+          135deg,
+          #ffffff00 0%,
+          #ffffff00 50%,
+          #98d890 50%,
+          #98d890 100%
+        ) !important;
+      }
       .endDate {
         background: linear-gradient(
           135deg,
@@ -116,6 +125,15 @@ body {
           #b37676 100%
         ) !important;
       }
+      .evening-blocked-hover {
+        background: linear-gradient(
+          135deg,
+          #98d890 0%,
+          #98d890 50%,
+          #b37676 50%,
+          #b37676 100%
+        ) !important;
+      }
 
       .morning-blocked {
         background: linear-gradient(
@@ -133,6 +151,15 @@ body {
           #b37676 50%,
           #7db376 50%,
           #7db376 100%
+        ) !important;
+      }
+      .morning-blocked-hover {
+        background: linear-gradient(
+          135deg,
+          #b37676 0%,
+          #b37676 50%,
+          #98d890 50%,
+          #98d890 100%
         ) !important;
       }
       .stop {

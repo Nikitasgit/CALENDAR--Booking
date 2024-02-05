@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fi, fr } from "date-fns/locale";
 import axios from "axios";
 import DayCell from "./DayCell";
 import chevronRight from "../assets/icons/right-chevron.png";
@@ -18,14 +18,13 @@ const Calendar = () => {
   const [currentMonth, setCurrentMonth] = useState(null);
   const [currentYear, setCurrentYear] = useState(null);
   const [defaultDate, setDefaultDate] = useState(null);
-  const [startDateElement, setStartDateElement] = useState();
   const [range, setRange] = useState({});
-  const daysWrapper = useRef(null);
-
+  const [selection, setSelection] = useState();
+  const [selectedDates, setSelectedDates] = useState();
+  const [firstUnavailableElement, setFirstUnavailableElement] = useState();
   const [currentMonthDates, setCurrentMonthDates] = useState();
   const { earliestDate, latestDate } = findMinMaxDates(dates);
-  const [previousAvailability, setPreviousAvailability] = useState(true);
-
+  const daysWrapper = useRef(null);
   const checkLatestDate = () => {
     const currentDate = new Date(currentYear, currentMonth, 1);
     if (currentDate > latestDate) {
@@ -109,10 +108,46 @@ const Calendar = () => {
       );
     });
   }, []);
-
-  const findFirstUnavailableDate = () => {
-    if (range.startDate && daysWrapper.current) {
-      const startToString = range.startDate.toISOString();
+  const renderSelection = () => {
+    if (range.startDate) {
+      const dayElements = Array.from(daysWrapper.current.children);
+      dayElements.forEach((day) => {
+        if (range.startDate) {
+          const dayDate = new Date(day.getAttribute("data-date"));
+          if (dayDate.getTime() == range.startDate.getTime()) {
+            if (day.classList.contains("morning-blocked")) {
+              day.classList.add("morning-blocked-selected");
+            } else {
+              day.classList.add("startDate");
+            }
+          }
+          if (range.endDate) {
+            if (
+              dayDate.getTime() == range.endDate?.getTime() &&
+              !day.classList.contains("disabled-day")
+            ) {
+              if (day.classList.contains("evening-blocked")) {
+                day.classList.add("evening-blocked-selected");
+              } else {
+                day.classList.add("endDate");
+              }
+            } else if (selection?.includes(dayDate?.toISOString())) {
+              day.classList.add("highlighted");
+            }
+          }
+        }
+      });
+    }
+  };
+  useEffect(() => {
+    currentMonthDates && renderSelection();
+  }, [currentMonthDates]);
+  useEffect(() => {
+    range.startDate && findFirstUnavailableDate(range.startDate);
+  }, [range.startDate]);
+  const findFirstUnavailableDate = (date) => {
+    if (date && daysWrapper.current) {
+      const startToString = date.toISOString();
       const startIndex = Array.from(daysWrapper.current.children).findIndex(
         (day) => day.getAttribute("data-date") === startToString
       );
@@ -125,157 +160,135 @@ const Calendar = () => {
         ) {
           const currentDay = daysWrapper.current.children[i];
           if (currentDay.classList.contains("evening-blocked")) {
-            return currentDay;
-          }
+            return setFirstUnavailableElement(currentDay);
+          } else setFirstUnavailableElement(null);
         }
       }
     }
   };
-
-  useEffect(() => {
-    if (range.startDate) findFirstUnavailableDate();
-  }, [range.startDate]);
-
   const handleDateClick = (e) => {
     const targetDateElement = e.target.closest(".day");
     if (!targetDateElement) return;
     const targetDate = targetDateElement.getAttribute("data-date");
     const dateClicked = new Date(targetDate);
-    if (!range.startDate && !range.endDate) {
+    const firstUnavailableDate = new Date(
+      firstUnavailableElement?.getAttribute("data-date")
+    );
+    if (
+      (!range.startDate && !range.endDate) ||
+      (range.startDate && range.endDate) ||
+      dateClicked > firstUnavailableDate ||
+      dateClicked < range.startDate
+    ) {
+      document.querySelectorAll(".morning-blocked-selected").forEach((el) => {
+        el.classList.remove("morning-blocked-selected");
+      });
+      document.querySelectorAll(".startDate").forEach((el) => {
+        el.classList.remove("startDate");
+      });
+      document.querySelectorAll(".endDate").forEach((el) => {
+        el.classList.remove("endDate");
+      });
+      document.querySelectorAll(".highlighted").forEach((el) => {
+        el.classList.remove("highlighted");
+      });
+      document.querySelectorAll(".evening-blocked-selected").forEach((el) => {
+        el.classList.remove("evening-blocked-selected");
+      });
+
       if (targetDateElement.classList.contains("morning-blocked")) {
+        targetDateElement.classList.remove("morning-blocked-hover");
         targetDateElement.classList.add("morning-blocked-selected");
       } else {
         targetDateElement.classList.add("startDate");
       }
-
-      setRange({ startDate: dateClicked, endDate: null });
+      return setRange({ startDate: dateClicked, endDate: null });
     } else if (range.startDate && !range.endDate) {
-      if (dateClicked > range.startDate) {
+      if (
+        (dateClicked > range.startDate &&
+          dateClicked <= firstUnavailableDate) ||
+        (dateClicked > range.startDate && !firstUnavailableElement)
+      ) {
         if (targetDateElement.classList.contains("evening-blocked")) {
           targetDateElement.classList.add("evening-blocked-selected");
         } else {
           targetDateElement.classList.add("endDate");
         }
+        setSelection(getDatesBetween(range.startDate, dateClicked));
         setRange({
           startDate: range.startDate,
           endDate: dateClicked,
         });
-      } else {
-        document.querySelectorAll(".startDate").forEach((el) => {
-          el.classList.remove("startDate");
-        });
-
-        targetDateElement.classList.add("startDate");
-        setRange({
-          startDate: dateClicked,
-          endDate: null,
-        });
       }
-    } else {
-      document.querySelectorAll(".startDate").forEach((el) => {
-        el.classList.remove("startDate");
-      });
-      document.querySelectorAll(".morning-blocked-selected").forEach((el) => {
-        el.classList.remove("morning-blocked-selected");
-      });
-      document.querySelectorAll(".evening-blocked-selected").forEach((el) => {
-        el.classList.remove("evening-blocked-selected");
-      });
-      document.querySelectorAll(".highlighted").forEach((el) => {
-        el.classList.remove("highlighted");
-      });
-      document.querySelectorAll(".endDate").forEach((el) => {
-        el.classList.remove("endDate");
-      });
-
-      targetDateElement.classList.add("startDate");
-      setRange({ startDate: dateClicked, endDate: null });
     }
   };
 
   const handleMouseOver = (e) => {
     const targetDateElement = e.target.closest(".day");
     if (targetDateElement) {
-      if (!range.startDate) {
+      const date = new Date(targetDateElement.getAttribute("data-date"));
+      const firstUnavailableDate = new Date(
+        firstUnavailableElement?.getAttribute("data-date")
+      );
+      document.querySelectorAll(".startDate-hover").forEach((el) => {
+        el.classList.remove("startDate-hover");
+      });
+      if (
+        !range.startDate ||
+        (range.startDate && range.endDate) ||
+        date < range.startDate ||
+        (date >= firstUnavailableDate && range.startDate)
+      ) {
+        document.querySelectorAll(".morning-blocked-hover").forEach((el) => {
+          el.classList.remove("morning-blocked-hover");
+        });
+        document.querySelectorAll(".stop").forEach((el) => {
+          el.classList.remove("stop");
+        });
         if (targetDateElement.classList.contains("morning-blocked")) {
-          document;
-          document.querySelectorAll(".startDate").forEach((el) => {
-            el.classList.remove("startDate");
-          });
-          document
-            .querySelectorAll(".morning-blocked-selected")
-            .forEach((el) => {
-              el.classList.remove("morning-blocked-selected");
-            });
-          document.querySelectorAll(".stop").forEach((el) => {
-            el.classList.remove("stop");
-          });
-          targetDateElement.classList.add("morning-blocked-selected");
+          targetDateElement.classList.add("morning-blocked-hover");
+        } else if (
+          date.getTime() == firstUnavailableDate.getTime() &&
+          !range.endDate
+        ) {
+          firstUnavailableElement.classList.add("evening-blocked-selected");
         } else if (targetDateElement.classList.contains("evening-blocked")) {
-          document
-            .querySelectorAll(".morning-blocked-selected")
-            .forEach((el) => {
-              el.classList.remove("morning-blocked-selected");
-            });
-          document.querySelectorAll(".startDate").forEach((el) => {
-            el.classList.remove("startDate");
-          });
-          document.querySelectorAll(".stop").forEach((el) => {
-            el.classList.remove("stop");
-          });
           targetDateElement.classList.add("stop");
         } else {
-          document.querySelectorAll(".stop").forEach((el) => {
-            el.classList.remove("stop");
-          });
-          document
-            .querySelectorAll(".morning-blocked-selected")
-            .forEach((el) => {
-              el.classList.remove("morning-blocked-selected");
-            });
-          document.querySelectorAll(".startDate").forEach((el) => {
-            el.classList.remove("startDate");
-          });
-          targetDateElement.classList.add("startDate");
+          targetDateElement.classList.add("startDate-hover");
         }
       }
 
-      if (range.startDate) {
-        const firstUnavailableElement = findFirstUnavailableDate();
+      if (range.startDate && !range.endDate) {
+        document.querySelectorAll(".endDate").forEach((el) => {
+          el.classList.remove("endDate");
+        });
+        document.querySelectorAll(".highlighted").forEach((el) => {
+          el.classList.remove("highlighted");
+        });
+        if (date < firstUnavailableDate || !firstUnavailableElement) {
+          firstUnavailableElement?.classList.remove("evening-blocked-selected");
+        }
 
-        const firstUnavailableDate = new Date(
-          firstUnavailableElement?.getAttribute("data-date")
+        const dates = getDatesBetween(
+          range.startDate,
+          firstUnavailableElement ? firstUnavailableDate : date
         );
 
-        const date = new Date(targetDateElement.getAttribute("data-date"));
-        const currentDates = getDatesBetween(range.startDate, date);
-
-        // Convert daysWrapper.children to an array
         const dayElements = Array.from(daysWrapper.current.children);
-
-        // Loop through the array of day elements
         dayElements.forEach((day) => {
           const dayDate = new Date(day.getAttribute("data-date"));
-          if (currentDates.includes(dayDate.toISOString())) {
-            // Add your desired class
-            if (dayDate < firstUnavailableDate) {
-              firstUnavailableElement.classList.remove(
-                "evening-blocked-selected"
-              );
+          if (dates?.includes(dayDate.toISOString())) {
+            if (dayDate < date && dayDate > range.startDate) {
               day.classList.add("highlighted");
-            } else {
-              firstUnavailableElement.classList.add("evening-blocked-selected");
+            } else if (
+              dayDate.getTime() == date.getTime() &&
+              dayDate.getTime() !== range.startDate.getTime()
+            ) {
+              day.classList.add("endDate");
             }
-
-            day.classList.remove("endDate");
-          } else {
-            // Remove the class if needed
-            day.classList.remove("highlighted");
-            day.classList.remove("endDate");
           }
         });
-
-        targetDateElement.classList.add("endDate");
       }
     }
   };
@@ -286,15 +299,22 @@ const Calendar = () => {
           <div className="range-first-day">
             <input
               type="text"
-              value={
-                range.startDate &&
-                format(new Date(range.startDate), "yyyy-MM-dd")
+              defaultValue={
+                range.startDate && format(range.startDate, "dd-MM-yyyy")
               }
               readOnly={true}
             />
           </div>
           <div className="range-last-day">
-            <input readOnly={true} type="text" value={"date"} />
+            <input
+              readOnly={true}
+              type="text"
+              defaultValue={
+                range.endDate &&
+                range.startDate &&
+                format(range.endDate, "dd-MM-yyyy")
+              }
+            />
           </div>
         </div>
         <div className="month">
@@ -343,7 +363,7 @@ const Calendar = () => {
           </div>
           <div
             className="days-wrapper"
-            onMouseOver={(e) => range.endDate == null && handleMouseOver(e)}
+            onMouseOver={(e) => handleMouseOver(e)}
             ref={daysWrapper}
             onClick={(e) => {
               handleDateClick(e);
