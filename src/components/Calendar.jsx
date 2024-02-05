@@ -114,7 +114,10 @@ const Calendar = () => {
       dayElements.forEach((day) => {
         if (range.startDate) {
           const dayDate = new Date(day.getAttribute("data-date"));
-          if (dayDate.getTime() == range.startDate.getTime()) {
+          if (
+            dayDate.getTime() == range.startDate.getTime() &&
+            !day.classList.contains("disabled-day")
+          ) {
             if (day.classList.contains("morning-blocked")) {
               day.classList.add("morning-blocked-selected");
             } else {
