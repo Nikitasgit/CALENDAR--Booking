@@ -26,16 +26,17 @@ export const getMissingDates = (givenDates, currentYear, currentMonth) => {
   const existingDates = givenDates.map((item) => item.date);
   const missingDates = allDatesArray
     .filter((date) => !existingDates.includes(date))
-    .map((date) => {
-      return {
-        date: date,
-        available: false,
-        rate: null,
-        className: "disabled-day",
-      };
-    });
+    .map((date) => ({
+      date: date,
+      available: false,
+      rate: null,
+      className: "day-blocked",
+    }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
   return missingDates;
 };
+
 export const findNextMonthDates = (
   prevDates,
   missingDates,

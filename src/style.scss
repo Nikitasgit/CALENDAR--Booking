@@ -93,7 +93,7 @@ body {
           #ffffff00 50%,
           #a7c2a3 50%,
           #a7c2a3 100%
-        ) !important;
+        );
       }
       .startDate-hover {
         background: linear-gradient(
@@ -109,6 +109,15 @@ body {
           135deg,
           #a7c2a3 0%,
           #a7c2a3 50%,
+          #ffffff00 50%,
+          #ffffff00 100%
+        );
+      }
+      .endDate-hover {
+        background: linear-gradient(
+          135deg,
+          #b9ddb3 0%,
+          #b9ddb3 50%,
           #ffffff00 50%,
           #ffffff00 100%
         ) !important;
@@ -148,7 +157,7 @@ body {
           #d79c9c 50%,
           rgba(255, 255, 255, 0) 50%,
           rgba(255, 255, 255, 0) 100%
-        ) !important;
+        );
       }
       .morning-blocked-selected {
         background: linear-gradient(
