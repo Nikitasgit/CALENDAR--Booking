@@ -259,16 +259,13 @@ const Calendar = () => {
         const endDateToHighlight = firstUnavailableElement
           ? firstUnavailableDate
           : date;
-        const currentDates = getDatesBetween(
-          range.startDate,
-          endDateToHighlight
-        );
+        const dates = getDatesBetween(range.startDate, endDateToHighlight);
 
         const dayElements = Array.from(daysWrapper.current.children);
         dayElements.forEach((day) => {
           const dayDate = new Date(day.getAttribute("data-date"));
 
-          if (currentDates?.includes(dayDate.toISOString())) {
+          if (dates?.includes(dayDate.toISOString())) {
             if (dayDate < date && dayDate > range.startDate) {
               day.classList.add(`highlighted${classMode}`);
             } else if (
