@@ -5,7 +5,7 @@ const DayCell = ({ date, rate, available, className }) => {
   const dayNumber = newDate.getDate();
   return (
     <div
-      tabIndex={!available ? -1 : 0}
+      tabIndex={!available && -1}
       key={date}
       className={`day${` ${className}`}`}
       data-date={date}

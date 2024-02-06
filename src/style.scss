@@ -98,24 +98,6 @@ body {
           #a7c2a3 100%
         ) !important;
       }
-      .startDate-hover {
-        background: linear-gradient(
-          135deg,
-          #ffffff00 0%,
-          #ffffff00 50%,
-          #b9ddb3 50%,
-          #b9ddb3 100%
-        ) !important;
-      }
-      .startDate-hover-red {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0) 50%,
-          #a73434 50%,
-          #a73434 100%
-        ) !important;
-      }
       .startDate-red {
         background: linear-gradient(
           135deg,
@@ -143,6 +125,25 @@ body {
           #ffffff00 100%
         ) !important;
       }
+      .startDate-hover {
+        background: linear-gradient(
+          135deg,
+          #ffffff00 0%,
+          #ffffff00 50%,
+          #b9ddb3 50%,
+          #b9ddb3 100%
+        ) !important;
+      }
+      .startDate-hover-red {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          #a73434 50%,
+          #a73434 100%
+        ) !important;
+      }
+
       .endDate-hover {
         background: linear-gradient(
           135deg,
@@ -175,6 +176,15 @@ body {
           135deg,
           #a7c2a3 0%,
           #a7c2a3 50%,
+          #d79c9c 50%,
+          #d79c9c 100%
+        ) !important;
+      }
+      .evening-blocked-selected-red {
+        background: linear-gradient(
+          135deg,
+          #b85252 0%,
+          #b85252 50%,
           #d79c9c 50%,
           #d79c9c 100%
         ) !important;

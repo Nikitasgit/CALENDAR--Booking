@@ -25,7 +25,7 @@ const Calendar = () => {
   const [firstUnavailableElement, setFirstUnavailableElement] = useState();
   const [currentMonthDates, setCurrentMonthDates] = useState();
   const [editing, setEditing] = useState(true);
-  const [disable, setdisable] = useState(false);
+  const [disable, setdisable] = useState(true);
   const [classMode, setClassMode] = useState();
   const { earliestDate, latestDate } = findMinMaxDates(dates);
   const daysWrapper = useRef(null);
@@ -246,6 +246,7 @@ const Calendar = () => {
   };
   const handleMouseHover = (e) => {
     const targetDateElement = e.target.closest(".day");
+
     if (targetDateElement) {
       const date = new Date(targetDateElement.getAttribute("data-date"));
       const firstUnavailableDate = new Date(
@@ -255,22 +256,25 @@ const Calendar = () => {
       clearExistingHoverClasses();
 
       if (range.startDate && !range.endDate) {
-        setSelection(
-          getDatesBetween(
-            range.startDate,
-            firstUnavailableElement ? firstUnavailableDate : date
-          )
+        const endDateToHighlight = firstUnavailableElement
+          ? firstUnavailableDate
+          : date;
+        const currentDates = getDatesBetween(
+          range.startDate,
+          endDateToHighlight
         );
+
         const dayElements = Array.from(daysWrapper.current.children);
         dayElements.forEach((day) => {
           const dayDate = new Date(day.getAttribute("data-date"));
-          if (selection?.includes(dayDate.toISOString())) {
+
+          if (currentDates?.includes(dayDate.toISOString())) {
             if (dayDate < date && dayDate > range.startDate) {
               day.classList.add(`highlighted${classMode}`);
             } else if (
-              dayDate.getTime() == date.getTime() &&
+              dayDate.getTime() === date.getTime() &&
               dayDate.getTime() !== range.startDate.getTime()
-            )
+            ) {
               if (
                 day.classList.contains("evening-blocked") ||
                 day.classList.contains("day-blocked")
@@ -279,7 +283,9 @@ const Calendar = () => {
               } else {
                 day.classList.add(`endDate-hover${classMode}`);
               }
+            }
           }
+
           if (date > firstUnavailableDate) {
             firstUnavailableElement.classList.add(
               `evening-blocked-hover${classMode}`
@@ -287,6 +293,7 @@ const Calendar = () => {
           }
         });
       }
+
       if (
         firstUnavailableDate < date ||
         date < range.startDate ||
@@ -294,9 +301,7 @@ const Calendar = () => {
         (!range.startDate && !range.endDate)
       ) {
         if (
-          (targetDateElement.classList.contains("morning-blocked") &&
-            !range.startDate &&
-            !range.endDate) ||
+          targetDateElement.classList.contains("morning-blocked") ||
           targetDateElement.classList.contains("day-blocked")
         ) {
           targetDateElement.classList.add(`morning-blocked-hover${classMode}`);
@@ -311,6 +316,7 @@ const Calendar = () => {
       }
     }
   };
+
   const checkLatestDate = () => {
     const currentDate = new Date(currentYear, currentMonth, 1);
     if (currentDate > latestDate) {
@@ -419,9 +425,7 @@ const Calendar = () => {
           </div>
           <div
             className="days-wrapper"
-            onMouseOver={(e) =>
-              /*     editing ? handleHoverEditing(e) :  */ handleMouseHover(e)
-            }
+            onMouseOver={(e) => handleMouseHover(e)}
             onMouseLeave={(e) => handleCursorOut(e)}
             ref={daysWrapper}
             onClick={(e) => {
