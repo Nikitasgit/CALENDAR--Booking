@@ -84,7 +84,10 @@ body {
       font-size: 0.9rem;
 
       .highlighted {
-        background: #c2ddbe;
+        background: #c2ddbe !important;
+      }
+      .highlighted-red {
+        background: #b85252 !important;
       }
       .startDate {
         background: linear-gradient(
@@ -93,7 +96,7 @@ body {
           #ffffff00 50%,
           #a7c2a3 50%,
           #a7c2a3 100%
-        );
+        ) !important;
       }
       .startDate-hover {
         background: linear-gradient(
@@ -104,6 +107,24 @@ body {
           #b9ddb3 100%
         ) !important;
       }
+      .startDate-hover-red {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          #a73434 50%,
+          #a73434 100%
+        ) !important;
+      }
+      .startDate-red {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          #b85252 50%,
+          #b85252 100%
+        ) !important;
+      }
       .endDate {
         background: linear-gradient(
           135deg,
@@ -111,13 +132,31 @@ body {
           #a7c2a3 50%,
           #ffffff00 50%,
           #ffffff00 100%
-        );
+        ) !important;
+      }
+      .endDate-red {
+        background: linear-gradient(
+          135deg,
+          #b85252 0%,
+          #b85252 50%,
+          #ffffff00 50%,
+          #ffffff00 100%
+        ) !important;
       }
       .endDate-hover {
         background: linear-gradient(
           135deg,
           #b9ddb3 0%,
           #b9ddb3 50%,
+          #ffffff00 50%,
+          #ffffff00 100%
+        ) !important;
+      }
+      .endDate-hover-red {
+        background: linear-gradient(
+          135deg,
+          #a73434 0%,
+          #a73434 50%,
           #ffffff00 50%,
           #ffffff00 100%
         ) !important;
@@ -149,7 +188,42 @@ body {
           #d79c9c 100%
         ) !important;
       }
-
+      .evening-blocked-hover-red {
+        background: linear-gradient(
+          135deg,
+          #a73434 0%,
+          #a73434 50%,
+          #d79c9c 50%,
+          #d79c9c 100%
+        ) !important;
+      }
+      .evening-blocked-hover {
+        background: linear-gradient(
+          135deg,
+          #b9ddb3 0%,
+          #b9ddb3 50%,
+          #d79c9c 50%,
+          #d79c9c 100%
+        ) !important;
+      }
+      .evening-blocked {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          #d79c9c 50%,
+          #d79c9c 100%
+        );
+      }
+      .morning-blocked {
+        background: linear-gradient(
+          135deg,
+          #d79c9c 0%,
+          #d79c9c 50%,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+      }
       .morning-blocked {
         background: linear-gradient(
           135deg,
@@ -168,6 +242,15 @@ body {
           #a7c2a3 100%
         ) !important;
       }
+      .morning-blocked-selected-red {
+        background: linear-gradient(
+          135deg,
+          #d79c9c 0%,
+          #d79c9c 50%,
+          #b85252 50%,
+          #b85252 100%
+        ) !important;
+      }
       .morning-blocked-hover {
         background: linear-gradient(
           135deg,
@@ -177,14 +260,39 @@ body {
           #b9ddb3 100%
         ) !important;
       }
+      .morning-blocked-hover-red {
+        background: linear-gradient(
+          135deg,
+          #d79c9c 0%,
+          #d79c9c 50%,
+          #a73434 50%,
+          #a73434 100%
+        ) !important;
+      }
       .stop {
         user-select: none;
         pointer-events: none;
       }
-      .day-blocked {
+      .evening-stop {
+        user-select: none;
         pointer-events: none;
+      }
+      .edit {
+        user-select: default;
+        pointer-events: all;
+      }
+      .day-blocked {
         background: #d79c9c;
         cursor: default;
+      }
+      .starteDate-block {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          #b85252 50%,
+          #b85252 100%
+        ) !important;
       }
       .day {
         position: relative;

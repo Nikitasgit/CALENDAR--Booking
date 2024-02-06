@@ -30,7 +30,7 @@ export const getMissingDates = (givenDates, currentYear, currentMonth) => {
       date: date,
       available: false,
       rate: null,
-      className: "day-blocked",
+      className: "day-blocked stop",
     }))
     .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
 
@@ -83,7 +83,14 @@ export const getDatesBetween = (startDate, endDate) => {
   return dates;
 };
 
-export const addClassesToDates = (datesArray, dates, lastDayPrevMonth) => {
+export const addClassesToDates = (
+  datesArray,
+  dates,
+  lastDayPrevMonth,
+  edit
+) => {
+  const classEdit = edit ? "edit" : "stop";
+
   const dateToUTCTime = lastDayPrevMonth.setUTCHours(0, 0, 0, 0);
   const dateToISO = new Date(dateToUTCTime).toISOString();
 
@@ -100,16 +107,58 @@ export const addClassesToDates = (datesArray, dates, lastDayPrevMonth) => {
       datesArray[0].className = "morning-blocked";
     }
     if (!foundDate && !datesArray[0].available) {
-      datesArray[0].className = "day-blocked";
+      datesArray[0].className = `day-blocked ${classEdit}`;
     }
     if (!date.available) {
-      if (date.className !== "day-blocked") {
+      if (date.className !== `day-blocked ${classEdit}`) {
         date.className = "evening-blocked";
       }
       if (index < array.length - 1) {
         const nextDate = array[index + 1];
         if (!nextDate.available) {
-          nextDate.className = "day-blocked";
+          nextDate.className = `day-blocked ${classEdit}`;
+        } else {
+          nextDate.className = "morning-blocked";
+        }
+      }
+    }
+
+    return date;
+  });
+};
+export const addClassesToDatesCopy = (
+  datesArray,
+  dates,
+  lastDayPrevMonth,
+  edit
+) => {
+  let classEdit = edit ? "edit" : "stop";
+  const dateToUTCTime = lastDayPrevMonth.setUTCHours(0, 0, 0, 0);
+  const dateToISO = new Date(dateToUTCTime).toISOString();
+
+  let foundDate;
+  for (const dateObj of dates) {
+    if (dateObj.date === dateToISO) {
+      foundDate = dateObj.available;
+      break;
+    }
+  }
+
+  return datesArray.map((date, index, array) => {
+    if (!foundDate && datesArray[0].available) {
+      datesArray[0].className = "morning-blocked";
+    }
+    if (!foundDate && !datesArray[0].available) {
+      datesArray[0].className = `day-blocked ${classEdit}`;
+    }
+    if (!date.available) {
+      if (date.className !== `day-blocked ${classEdit}`) {
+        date.className = "evening-blocked";
+      }
+      if (index < array.length - 1) {
+        const nextDate = array[index + 1];
+        if (!nextDate.available) {
+          nextDate.className = `day-blocked ${classEdit}`;
         } else {
           nextDate.className = "morning-blocked";
         }

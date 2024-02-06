@@ -7,6 +7,7 @@ import chevronRight from "../assets/icons/right-chevron.png";
 import chevronLeft from "../assets/icons/left-chevron.png";
 import {
   addClassesToDates,
+  addClassesToDatesCopy,
   findNextMonthDates,
   findPrevMonthDates,
   getDatesBetween,
@@ -23,10 +24,15 @@ const Calendar = () => {
   const [selection, setSelection] = useState([]);
   const [firstUnavailableElement, setFirstUnavailableElement] = useState();
   const [currentMonthDates, setCurrentMonthDates] = useState();
+  const [editing, setEditing] = useState(true);
+  const [disable, setdisable] = useState(false);
+  const [classMode, setClassMode] = useState();
   const { earliestDate, latestDate } = findMinMaxDates(dates);
   const daysWrapper = useRef(null);
-
   //USEEFFECTS
+  useEffect(() => {
+    editing && disable ? setClassMode("-red") : setClassMode("");
+  }, [disable]);
   useEffect(() => {
     axios.get("http://localhost:3010/api/v1/accommodations").then((res) => {
       setDefaultDate(new Date(res.data.accommodations[1].dates[0].date));
@@ -56,7 +62,8 @@ const Calendar = () => {
     const monthDatesExisting = addClassesToDates(
       currentMonthDates,
       dates,
-      lastDayPrevMonth
+      lastDayPrevMonth,
+      editing
     );
     const nextMonthDates = findNextMonthDates(
       prevMonthDates.length,
@@ -74,15 +81,17 @@ const Calendar = () => {
     ]);
   }, [currentMonth]);
   useEffect(() => {
-    range.endDate && renderSelection();
-  }, [range.endDate]);
+    renderSelection();
+  }, [currentMonthDates, range.startDate, range.endDate]);
   useEffect(() => {
-    range.startDate && findFirstUnavailableDate(range.startDate);
+    range.startDate && !editing && findFirstUnavailableDate(range.startDate);
   }, [range.startDate]);
 
   //FUNCTIONS
+
   const renderSelection = () => {
     if (range.startDate) {
+      clearSelectionClasses();
       const dayElements = Array.from(daysWrapper.current.children);
       dayElements.forEach((day) => {
         if (range.startDate) {
@@ -91,10 +100,13 @@ const Calendar = () => {
             dayDate.getTime() == range.startDate.getTime() &&
             !day.classList.contains("disabled-day")
           ) {
-            if (day.classList.contains("morning-blocked")) {
-              day.classList.add("morning-blocked-selected");
+            if (
+              day.classList.contains("morning-blocked") ||
+              day.classList.contains("day-blocked")
+            ) {
+              day.classList.add(`morning-blocked-selected${classMode}`);
             } else {
-              day.classList.add("startDate");
+              day.classList.add(`startDate${classMode}`);
             }
           }
           if (range.endDate) {
@@ -102,19 +114,26 @@ const Calendar = () => {
               dayDate.getTime() == range.endDate?.getTime() &&
               !day.classList.contains("disabled-day")
             ) {
-              if (day.classList.contains("evening-blocked")) {
-                day.classList.add("evening-blocked-selected");
+              if (
+                day.classList.contains("evening-blocked") ||
+                day.classList.contains("day-blocked")
+              ) {
+                day.classList.add(`evening-blocked-selected${classMode}`);
               } else {
-                day.classList.add("endDate");
+                day.classList.add(`endDate${classMode}`);
               }
-            } else if (selection?.includes(dayDate?.toISOString())) {
-              day.classList.add("highlighted");
+            } else if (
+              selection?.includes(dayDate?.toISOString()) &&
+              !day.classList.contains("disabled-day")
+            ) {
+              day.classList.add(`highlighted${classMode}`);
             }
           }
         }
       });
     }
   };
+
   const findFirstUnavailableDate = (date) => {
     if (date && daysWrapper.current) {
       const startToString = date.toISOString();
@@ -137,22 +156,39 @@ const Calendar = () => {
     }
   };
   const clearSelectionClasses = () => {
-    document.querySelectorAll(".morning-blocked-selected").forEach((el) => {
-      el.classList.remove("morning-blocked-selected");
+    document
+      .querySelectorAll(`.morning-blocked-selected${classMode}`)
+      .forEach((el) => {
+        el.classList.remove(`morning-blocked-selected${classMode}`);
+      });
+    document
+      .querySelectorAll(`.evening-blocked-hover${classMode}`)
+      .forEach((el) => {
+        el.classList.remove(`evening-blocked-hover${classMode}`);
+      });
+
+    document.querySelectorAll(`.startDate${classMode}`).forEach((el) => {
+      el.classList.remove(`startDate${classMode}`);
     });
-    document.querySelectorAll(".startDate").forEach((el) => {
-      el.classList.remove("startDate");
+
+    document.querySelectorAll(`.endDate${classMode}`).forEach((el) => {
+      el.classList.remove(`endDate${classMode}`);
     });
-    document.querySelectorAll(".endDate").forEach((el) => {
-      el.classList.remove("endDate");
+    document.querySelectorAll(`.endDate-hover${classMode}`).forEach((el) => {
+      el.classList.remove(`endDate-hover${classMode}`);
     });
-    document.querySelectorAll(".highlighted").forEach((el) => {
-      el.classList.remove("highlighted");
+
+    document.querySelectorAll(`.highlighted${classMode}`).forEach((el) => {
+      el.classList.remove(`highlighted${classMode}`);
     });
-    document.querySelectorAll(".evening-blocked-selected").forEach((el) => {
-      el.classList.remove("evening-blocked-selected");
-    });
+
+    document
+      .querySelectorAll(`.evening-blocked-selected${classMode}`)
+      .forEach((el) => {
+        el.classList.remove(`evening-blocked-selected${classMode}`);
+      });
   };
+
   const handleDateClick = (e) => {
     const targetDateElement = e.target.closest(".day");
     if (!targetDateElement) return;
@@ -167,14 +203,6 @@ const Calendar = () => {
       dateClicked > firstUnavailableDate ||
       dateClicked < range.startDate
     ) {
-      clearSelectionClasses();
-
-      if (targetDateElement.classList.contains("morning-blocked")) {
-        targetDateElement.classList.remove("morning-blocked-hover");
-        targetDateElement.classList.add("morning-blocked-selected");
-      } else {
-        targetDateElement.classList.add("startDate");
-      }
       return setRange({ startDate: dateClicked, endDate: null });
     } else if (range.startDate && !range.endDate) {
       if (
@@ -191,25 +219,29 @@ const Calendar = () => {
     }
   };
   const clearExistingHoverClasses = () => {
-    document.querySelectorAll(".startDate-hover").forEach((el) => {
-      el.classList.remove("startDate-hover");
+    document.querySelectorAll(`.startDate-hover${classMode}`).forEach((el) => {
+      el.classList.remove(`startDate-hover${classMode}`);
     });
-    document.querySelectorAll(".morning-blocked-hover").forEach((el) => {
-      el.classList.remove("morning-blocked-hover");
-    });
-    document.querySelectorAll(".stop").forEach((el) => {
-      el.classList.remove("stop");
+    document
+      .querySelectorAll(`.morning-blocked-hover${classMode}`)
+      .forEach((el) => {
+        el.classList.remove(`morning-blocked-hover${classMode}`);
+      });
+    document.querySelectorAll(".evening-stop").forEach((el) => {
+      el.classList.remove("evening-stop");
     });
     if (range.startDate && !range.endDate) {
-      document.querySelectorAll(".endDate-hover").forEach((el) => {
-        el.classList.remove("endDate-hover");
+      document.querySelectorAll(`.endDate-hover${classMode}`).forEach((el) => {
+        el.classList.remove(`endDate-hover${classMode}`);
       });
-      document.querySelectorAll(".highlighted").forEach((el) => {
-        el.classList.remove("highlighted");
+      document.querySelectorAll(`.highlighted${classMode}`).forEach((el) => {
+        el.classList.remove(`highlighted${classMode}`);
       });
-      document.querySelectorAll(".evening-blocked-hover").forEach((el) => {
-        el.classList.remove("evening-blocked-hover");
-      });
+      document
+        .querySelectorAll(`.evening-blocked-hover${classMode}`)
+        .forEach((el) => {
+          el.classList.remove(`evening-blocked-hover${classMode}`);
+        });
     }
   };
   const handleMouseHover = (e) => {
@@ -234,20 +266,24 @@ const Calendar = () => {
           const dayDate = new Date(day.getAttribute("data-date"));
           if (selection?.includes(dayDate.toISOString())) {
             if (dayDate < date && dayDate > range.startDate) {
-              day.classList.add("highlighted");
-              console.log(day);
+              day.classList.add(`highlighted${classMode}`);
             } else if (
               dayDate.getTime() == date.getTime() &&
               dayDate.getTime() !== range.startDate.getTime()
             )
-              if (day.classList.contains("evening-blocked")) {
-                day.classList.add("evening-blocked-hover");
+              if (
+                day.classList.contains("evening-blocked") ||
+                day.classList.contains("day-blocked")
+              ) {
+                day.classList.add(`evening-blocked-hover${classMode}`);
               } else {
-                day.classList.add("endDate-hover");
+                day.classList.add(`endDate-hover${classMode}`);
               }
           }
           if (date > firstUnavailableDate) {
-            firstUnavailableElement.classList.add("evening-blocked-hover");
+            firstUnavailableElement.classList.add(
+              `evening-blocked-hover${classMode}`
+            );
           }
         });
       }
@@ -257,13 +293,20 @@ const Calendar = () => {
         (range.startDate && range.endDate) ||
         (!range.startDate && !range.endDate)
       ) {
-        if (targetDateElement.classList.contains("morning-blocked")) {
-          targetDateElement.classList.add("morning-blocked-hover");
-        } else if (targetDateElement.classList.contains("evening-blocked")) {
-          targetDateElement.classList.add("stop");
-          console.log("stop");
+        if (
+          (targetDateElement.classList.contains("morning-blocked") &&
+            !range.startDate &&
+            !range.endDate) ||
+          targetDateElement.classList.contains("day-blocked")
+        ) {
+          targetDateElement.classList.add(`morning-blocked-hover${classMode}`);
+        } else if (
+          targetDateElement.classList.contains("evening-blocked") &&
+          !editing
+        ) {
+          targetDateElement.classList.add("evening-stop");
         } else {
-          targetDateElement.classList.add("startDate-hover");
+          targetDateElement.classList.add(`startDate-hover${classMode}`);
         }
       }
     }
@@ -376,7 +419,9 @@ const Calendar = () => {
           </div>
           <div
             className="days-wrapper"
-            onMouseOver={(e) => handleMouseHover(e)}
+            onMouseOver={(e) =>
+              /*     editing ? handleHoverEditing(e) :  */ handleMouseHover(e)
+            }
             onMouseLeave={(e) => handleCursorOut(e)}
             ref={daysWrapper}
             onClick={(e) => {
